@@ -1,0 +1,546 @@
+/* ========================================
+   UCP Portal Prototype - Exact Match Styles
+   Matching horizon.ucp.edu.pk Odoo Portal
+======================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #e8ecef;
+    min-height: 100vh;
+    color: #333;
+}
+
+/* ========== HEADER ========== */
+.main-header {
+    background: #0d6efd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
+    background: #0d6efd;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ucp-logo {
+    height: 35px;
+    background: white;
+    padding: 3px;
+    border-radius: 3px;
+}
+
+.portal-title {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.user-name {
+    color: white;
+    font-size: 0.85rem;
+}
+
+.nav-bar {
+    background: #0b5ed7;
+    padding: 6px 15px;
+}
+
+.nav-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 0.85rem;
+}
+
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.breadcrumb {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.8rem;
+}
+
+/* ========== MAIN CONTENT ========== */
+.main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px 0;
+}
+
+.page-header h1 {
+    color: #333;
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.regular-courses-badge {
+    background: #28a745;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* ========== SEARCH & FILTERS ========== */
+.search-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+    background: white;
+    padding: 12px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 14px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: white;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover {
+    background: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+
+.filter-btn.highlight {
+    background: #fd7e14;
+    color: white;
+    border-color: #fd7e14;
+}
+
+/* ========== COURSE LIST ========== */
+.course-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.course-item {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.course-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: linear-gradient(180deg, #4a90d9 0%, #357abd 100%);
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.course-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.course-code {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.course-name {
+    font-size: 0.85rem;
+    opacity: 0.95;
+}
+
+.course-badges {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.badge {
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.badge-semester {
+    background: #ffc107;
+    color: #333;
+}
+
+.badge-compulsory {
+    background: #dc3545;
+    color: white;
+}
+
+.badge-elective {
+    background: #6f42c1;
+    color: white;
+}
+
+.expand-icon {
+    font-size: 0.9rem;
+    transition: transform 0.2s;
+}
+
+.course-item.expanded .expand-icon {
+    transform: rotate(180deg);
+}
+
+/* ========== COURSE SECTIONS - Exact Match ========== */
+.course-sections {
+    display: none;
+    padding: 15px;
+    background: #f0f4f7;
+}
+
+.course-item.expanded .course-sections {
+    display: block;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ccc;
+}
+
+.section-title {
+    font-size: 0.9rem;
+    color: #333;
+    font-weight: 500;
+}
+
+.co-req-info {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.sections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+/* Section Card - EXACT MATCH to portal */
+.section-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.section-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.section-card.selected {
+    border: 2px solid #28a745;
+}
+
+.section-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: #e9ecef;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.section-id {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #333;
+}
+
+/* Status badges - EXACT MATCH */
+.status-badge {
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.status-open {
+    background: #28a745;
+    color: white;
+}
+
+.status-close {
+    background: #dc3545;
+    color: white;
+}
+
+.section-card-body {
+    padding: 10px;
+    background: white;
+}
+
+/* Schedule label with green dot - EXACT MATCH */
+.schedule-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    color: #28a745;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.schedule-label::before {
+    content: "◉";
+    font-size: 0.6rem;
+}
+
+.schedule-times {
+    font-size: 0.8rem;
+    color: #555;
+    line-height: 1.5;
+}
+
+.schedule-times div {
+    padding: 1px 0;
+}
+
+.section-card-footer {
+    padding: 8px 10px;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Enroll button - EXACT MATCH green */
+.enroll-btn {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.enroll-btn.available {
+    background: #28a745;
+    color: white;
+}
+
+.enroll-btn.available:hover {
+    background: #218838;
+}
+
+.enroll-btn.unavailable {
+    background: #6c757d;
+    color: white;
+    cursor: not-allowed;
+}
+
+.enroll-btn.enrolled {
+    background: #0d6efd;
+    color: white;
+}
+
+/* ========== MODAL ========== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 6px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #0d6efd;
+    color: white;
+}
+
+.modal-header h2 {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(80vh - 60px);
+}
+
+/* ========== TOAST ========== */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #333;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 2000;
+}
+
+.toast.active {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.success {
+    background: #28a745;
+}
+
+.toast.error {
+    background: #dc3545;
+}
+
+/* ========== CART INDICATOR ========== */
+.cart-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #0d6efd;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 30px;
+    box-shadow: 0 3px 10px rgba(13, 110, 253, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.cart-indicator:hover {
+    background: #0b5ed7;
+}
+
+.cart-count {
+    background: #dc3545;
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .course-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .sections-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .sections-grid {
+        grid-template-columns: 1fr;
+    }
+}

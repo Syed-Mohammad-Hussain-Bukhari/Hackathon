@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Smart Course Registration",
+  "version": "1.0.0",
+  "description": "Auto-generate optimized course timetables for UCP students",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": [
+    "*://horizon.ucp.edu.pk/*",
+    "http://localhost:*/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://horizon.ucp.edu.pk/*", "http://localhost:*/*"],
+      "js": ["content/content.js"],
+      "css": ["content/content.css"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

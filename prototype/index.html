@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fall 2025 - Self Enrollment (Advanced) | UCP Portal</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-top">
+            <div class="logo-section">
+                <img src="https://www.ucp.edu.pk/wp-content/uploads/2023/03/ucp-logo.png" alt="UCP Logo" class="ucp-logo" onerror="this.style.display='none'">
+                <span class="portal-title">University of Central Punjab</span>
+            </div>
+            <div class="header-actions">
+                <span class="user-name">Welcome, Student</span>
+            </div>
+        </div>
+        <nav class="nav-bar">
+            <div class="nav-container">
+                <a href="#" class="nav-link active">🏠 Home</a>
+                <span class="breadcrumb">› Self Enrollment</span>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="page-header">
+            <h1>Fall 2025 - Self Enrollment (Advanced)</h1>
+            <span class="regular-courses-badge">REGULAR COURSES</span>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="search-filters">
+            <input type="text" placeholder="Search for course name..." class="search-input" id="courseSearch">
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">VIEW ENROLLMENT CART</button>
+                <button class="filter-btn" data-filter="timetable">VIEW TIME TABLE</button>
+                <button class="filter-btn highlight" data-filter="available">📅 VIEW AVAILABLE COURSES TIMETABLE</button>
+            </div>
+        </div>
+
+        <!-- Course List -->
+        <div class="course-list" id="courseList">
+            <!-- Courses will be dynamically generated -->
+        </div>
+    </main>
+
+    <!-- Course Section Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content" id="modalContent">
+            <div class="modal-header">
+                <h2 id="modalTitle">Course Sections</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Sections will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toastMessage"></span>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

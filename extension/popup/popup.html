@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Registration</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">📅</span>
+                <span class="logo-text">Smart Registration</span>
+            </div>
+        </header>
+
+        <!-- Status Bar -->
+        <div class="status-bar" id="statusBar">
+            <span class="status-icon">⏳</span>
+            <span class="status-text" id="statusText">Ready to scan courses</span>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Step 1: Scan -->
+            <section class="step" id="stepScan">
+                <button class="btn btn-primary btn-large" id="scanBtn">
+                    <span class="btn-icon">🔍</span>
+                    Scan Available Courses
+                </button>
+                <p class="hint">Open the UCP portal first, then click scan</p>
+            </section>
+
+            <!-- Step 2: Course Selection -->
+            <section class="step hidden" id="stepCourses">
+                <div class="stats-row" id="statsRow">
+                    <div class="stat">
+                        <span class="stat-value" id="courseCount">0</span>
+                        <span class="stat-label">Courses</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="sectionCount">0</span>
+                        <span class="stat-label">Sections</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="openCount">0</span>
+                        <span class="stat-label">Open</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Courses to Register</label>
+                    <div class="course-chips" id="courseChips"></div>
+                </div>
+
+                <button class="btn btn-primary btn-large" id="nextToFiltersBtn">
+                    Next: Set Preferences →
+                </button>
+            </section>
+
+            <!-- Step 3: Filters & Preferences -->
+            <section class="step hidden" id="stepFilters">
+                <div class="section-title">
+                    <span>⚙️ Schedule Preferences</span>
+                    <button class="btn btn-small" id="backToCoursesBtn">← Back</button>
+                </div>
+
+                <!-- Preferred Days -->
+                <div class="form-group">
+                    <label>Preferred Days</label>
+                    <div class="day-chips" id="dayChips">
+                        <div class="chip selected" data-day="Mon"><span class="chip-check">✓</span> Mon</div>
+                        <div class="chip selected" data-day="Tue"><span class="chip-check">✓</span> Tue</div>
+                        <div class="chip selected" data-day="Wed"><span class="chip-check">✓</span> Wed</div>
+                        <div class="chip selected" data-day="Thu"><span class="chip-check">✓</span> Thu</div>
+                        <div class="chip selected" data-day="Fri"><span class="chip-check">✓</span> Fri</div>
+                    </div>
+                </div>
+
+                <!-- Time Range -->
+                <div class="form-group">
+                    <label>Time Range (All Days)</label>
+                    <div class="form-row">
+                        <div class="time-input">
+                            <span class="time-label">Start</span>
+                            <select id="startTime" class="select">
+                                <option value="08:00">08:00 AM</option>
+                                <option value="09:00">09:00 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="12:00">12:00 PM</option>
+                                <option value="13:00">01:00 PM</option>
+                                <option value="14:00">02:00 PM</option>
+                            </select>
+                        </div>
+                        <div class="time-input">
+                            <span class="time-label">End</span>
+                            <select id="endTime" class="select">
+                                <option value="15:00">03:00 PM</option>
+                                <option value="16:00">04:00 PM</option>
+                                <option value="17:00">05:00 PM</option>
+                                <option value="18:00" selected>06:00 PM</option>
+                                <option value="19:00">07:00 PM</option>
+                                <option value="20:00">08:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Max Days & Gaps -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Max Campus Days</label>
+                        <select id="maxDays" class="select">
+                            <option value="2">2 Days</option>
+                            <option value="3" selected>3 Days</option>
+                            <option value="4">4 Days</option>
+                            <option value="5">5 Days</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Max Gap</label>
+                        <select id="maxGap" class="select">
+                            <option value="1">1 Hour</option>
+                            <option value="2" selected>2 Hours</option>
+                            <option value="3">3 Hours</option>
+                            <option value="0">Any</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn btn-success btn-large" id="generateBtn">
+                    <span class="btn-icon">✨</span>
+                    Generate Optimal Timetables
+                </button>
+            </section>
+
+            <!-- Step 4: Warnings (if courses excluded) -->
+            <section class="step hidden" id="stepWarnings">
+                <div class="warning-box">
+                    <div class="warning-icon">⚠️</div>
+                    <h3>Some Courses Excluded</h3>
+                    <p id="warningText">The following courses don't fit your time/day preferences:</p>
+                    <div class="excluded-courses" id="excludedCourses"></div>
+                </div>
+                <div class="warning-actions">
+                    <button class="btn btn-small" id="backToFiltersBtn">← Adjust Filters</button>
+                    <button class="btn btn-success" id="continueAnywayBtn">Continue Without Them →</button>
+                </div>
+            </section>
+
+            <!-- Step 5: Results -->
+            <section class="step hidden" id="stepResults">
+                <div class="results-header">
+                    <h3>Top Timetables</h3>
+                    <button class="btn btn-small" id="backBtn">← Back</button>
+                </div>
+                <div class="results-list" id="resultsList"></div>
+            </section>
+
+            <!-- Step 6: Timetable View -->
+            <section class="step hidden" id="stepTimetable">
+                <div class="results-header">
+                    <h3 id="timetableTitle">Timetable #1</h3>
+                    <button class="btn btn-small" id="backToResultsBtn">← Back</button>
+                </div>
+                <div class="timetable-grid" id="timetableGrid"></div>
+                <button class="btn btn-success btn-large" id="applyBtn">
+                    <span class="btn-icon">✓</span>
+                    Apply This Schedule
+                </button>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <span>UCP Smart Registration v1.0</span>
+        </footer>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
