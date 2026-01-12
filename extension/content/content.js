@@ -15,6 +15,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: result });
     }
 
+    if (request.action === 'watch') {
+        addSectionToWatchlist(request.sectionId, request.courseCode);
+        sendResponse({ success: true });
+    }
+
     return true; // Keep channel open for async
 });
 
@@ -97,3 +102,65 @@ function injectIndicator() {
 // Initialize
 console.log('[Smart Registration] Content script loaded');
 injectIndicator();
+
+// ========================================
+// WATCHER & NOTIFICATION LOGIC
+// ========================================
+
+// Listen for messages from the web page (Prototype)
+window.addEventListener('message', function (event) {
+    if (event.source !== window) return;
+
+    if (event.data.type && event.data.type === 'EXTENSION_WATCH_SECTION') {
+        const { sectionId, courseCode } = event.data;
+        addSectionToWatchlist(sectionId, courseCode);
+    }
+});
+
+// Add to storage
+function addSectionToWatchlist(sectionId, courseCode) {
+    chrome.storage.local.get(['watchlist'], (result) => {
+        const watchlist = result.watchlist || [];
+        // Check if already watching
+        if (!watchlist.find(s => s.sectionId === sectionId)) {
+            watchlist.push({ sectionId, courseCode });
+            chrome.storage.local.set({ watchlist: watchlist }, () => {
+                console.log(`[Smart Registration] Added ${sectionId} to watchlist`);
+            });
+        }
+    });
+}
+
+// Check if any watched sections are now OPEN
+function checkWatchedSections() {
+    chrome.storage.local.get(['watchlist'], (result) => {
+        const watchlist = result.watchlist || [];
+        if (watchlist.length === 0) return;
+
+        const sectionCards = document.querySelectorAll('.section-card');
+        sectionCards.forEach(card => {
+            const id = card.getAttribute('data-section-id');
+            const status = card.getAttribute('data-status');
+
+            const watched = watchlist.find(w => w.sectionId === id);
+
+            if (watched && status === 'open') {
+                // IT'S OPEN! Notify!
+                chrome.runtime.sendMessage({
+                    type: 'NOTIFY_USER',
+                    title: 'Section Re-Opened!',
+                    message: `${watched.courseCode ? watched.courseCode + ' ' : ''}Section ${id} is now OPEN! Enroll immediately!`
+                });
+            }
+        });
+    });
+}
+
+// Run check periodically or on load
+checkWatchedSections();
+
+// Monitor for dynamic content changes (re-rendering)
+const observer = new MutationObserver((mutations) => {
+    checkWatchedSections();
+});
+observer.observe(document.body, { childList: true, subtree: true });

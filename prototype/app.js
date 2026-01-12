@@ -4,10 +4,12 @@
 // ========================================
 
 // Initialize the application
+// Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     renderCourseList();
     setupSearch();
     updateCartIndicator();
+    setupFilters();
 });
 
 // Render the course list
@@ -309,3 +311,214 @@ document.addEventListener('keydown', (e) => {
 console.log('📚 UCP Portal Prototype Loaded');
 console.log('🔍 Extension can scrape using: document.querySelectorAll(".section-card")');
 console.log('📊 Total sections:', document.querySelectorAll('.section-card').length || 'Page loading...');
+
+// ========================================
+// NEW FUNCTIONALITY: Filters & Timetables
+// ========================================
+
+function setupFilters() {
+    const buttons = document.querySelectorAll('.filter-btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const filter = btn.getAttribute('data-filter');
+            if (filter === 'all') { // VIEW ENROLLMENT CART
+                showCart();
+            } else if (filter === 'timetable') { // VIEW TIME TABLE
+                showEnrolledTimetable();
+            } else if (filter === 'available') { // VIEW AVAILABLE COURSES TIMETABLE
+                showMasterTimetable();
+            } else if (filter === 'closed') { // VIEW CLOSED SECTIONS
+                showClosedSections();
+            }
+        });
+    });
+}
+
+function showEnrolledTimetable() {
+    if (enrollmentCart.length === 0) {
+        showModal("My Timetable", "<p style='text-align:center; padding:20px; color:#666;'>You haven't enrolled in any courses yet.</p>");
+        return;
+    }
+
+    const schedule = [];
+    enrollmentCart.forEach(item => {
+        schedule.push({
+            courseName: item.courseName,
+            courseCode: item.courseCode,
+            sectionId: item.sectionId,
+            schedule: item.schedule
+        });
+    });
+
+    const html = createTimetableGridHTML(schedule, "My Enrolled Schedule");
+    showModal("My Timetable", html);
+}
+
+function showMasterTimetable() {
+    // Show sections of all COMPULSORY courses
+    const compulsoryCourses = coursesData.filter(c => c.type === 'compulsory');
+    let allSections = [];
+
+    compulsoryCourses.forEach(c => {
+        // Take first 3 sections of each compulsory course for demo
+        const sections = c.sections.filter(s => s.status === 'open').slice(0, 3);
+        sections.forEach(s => {
+            allSections.push({
+                courseName: c.name,
+                courseCode: c.code,
+                sectionId: s.id,
+                schedule: s.schedule
+            });
+        });
+    });
+
+    // Limit if too many
+    if (allSections.length > 25) allSections = allSections.slice(0, 25);
+
+    const html = createTimetableGridHTML(allSections, "Available Courses (Compulsory Selection)");
+    showModal("Available Courses Timetable", html);
+}
+
+function showClosedSections() {
+    let closedSections = [];
+    coursesData.forEach(c => {
+        c.sections.filter(s => s.status === 'close').forEach(s => {
+            closedSections.push({
+                courseName: c.name,
+                courseCode: c.code,
+                section: s
+            });
+        });
+    });
+
+    if (closedSections.length === 0) {
+        showModal("Closed Sections", "<p style='padding:20px; text-align:center;'>No closed sections found.</p>");
+        return;
+    }
+
+    // limit for demo
+    if (closedSections.length > 50) closedSections = closedSections.slice(0, 50);
+
+    let html = '<div style="margin-bottom: 15px; color: #666;">Select a section to be notified via extension/email when it reopens.</div>';
+    html += '<div class="sections-grid">';
+    closedSections.forEach(item => {
+        const s = item.section;
+        html += `
+            <div class="section-card" style="border-left: 4px solid #dc3545;">
+                <div class="section-card-header">
+                    <span class="section-id">${s.id}</span>
+                    <span class="status-badge status-close">Closed</span>
+                </div>
+                <div class="section-card-body">
+                    <div style="font-weight:600; font-size:0.85rem; margin-bottom:5px;">${item.courseCode}</div>
+                    <div style="font-size:0.8rem; color:#666; margin-bottom:10px;">${item.courseName}</div>
+                    <div class="schedule-times">
+                        ${s.schedule.map(t => `<div>${t.day} ${t.time}</div>`).join('')}
+                    </div>
+                </div>
+                <div class="section-card-footer">
+                    <button class="enroll-btn" style="background:#ffc107; color:#333;" onclick="handleNotify('${s.id}', '${item.courseCode}')">
+                        🔔 Notify Me When Open
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+
+    showModal("Closed Sections Watcher", html);
+}
+
+function handleNotify(sectionId, courseCode) {
+    window.postMessage({ type: 'EXTENSION_WATCH_SECTION', sectionId, courseCode }, '*');
+    showToast(`🔔 ALERT SET: Extension is watching ${sectionId}!`, 'success');
+}
+
+function createTimetableGridHTML(schedule, title) {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+    const hours = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+
+    // Build Map
+    const scheduleMap = {};
+    schedule.forEach(section => {
+        if (!section.schedule) return;
+        section.schedule.forEach(t => {
+            const hourKey = t.time.split(' - ')[0];
+            const key = `${t.day}-${hourKey}`;
+
+            if (!scheduleMap[key]) scheduleMap[key] = [];
+            scheduleMap[key].push({
+                courseName: section.courseName,
+                sectionId: section.sectionId,
+                color: getCourseColor(section.courseCode)
+            });
+        });
+    });
+
+    let html = `<div style="margin-bottom: 15px; font-weight: 500; font-size: 1.1rem; color: #333;">${title}</div>`;
+    html += '<div class="timetable-grid">';
+
+    html += '<div class="timetable-row">';
+    html += '<div class="timetable-cell timetable-header">Time</div>';
+    days.forEach(day => html += `<div class="timetable-cell timetable-header">${day}</div>`);
+    html += '</div>';
+
+    hours.forEach(hour => {
+        html += '<div class="timetable-row">';
+        html += `<div class="timetable-cell timetable-time">${hour}</div>`;
+
+        days.forEach(day => {
+            const key = `${day}-${hour}`;
+            const items = scheduleMap[key];
+
+            html += '<div class="timetable-cell">';
+            if (items) {
+                items.forEach(item => {
+                    // Extract short section ID (e.g. "G20")
+                    let shortSec = item.sectionId;
+                    if (shortSec.includes(' ')) shortSec = shortSec.split(' ').pop();
+                    shortSec = shortSec.replace(/-?NOGAP/i, '');
+
+                    html += `
+                        <div class="timetable-class" style="margin-bottom: 2px; border-left-color: ${item.color.border}; background: ${item.color.bg};">
+                            <div class="cell-course" style="font-size: 0.7rem; color: ${item.color.text}" title="${item.courseName}">${item.courseName}</div>
+                            <div class="cell-section" style="font-size: 0.65rem;">${shortSec}</div>
+                        </div>
+                    `;
+                });
+            }
+            html += '</div>';
+        });
+
+        html += '</div>';
+    });
+
+    html += '</div>';
+    return html;
+}
+
+function getCourseColor(code) {
+    const colors = [
+        { bg: '#e3f2fd', border: '#2196f3', text: '#0d47a1' },
+        { bg: '#e8f5e9', border: '#4caf50', text: '#1b5e20' },
+        { bg: '#fff3e0', border: '#ff9800', text: '#e65100' },
+        { bg: '#f3e5f5', border: '#9c27b0', text: '#4a148c' },
+        { bg: '#ffebee', border: '#f44336', text: '#b71c1c' },
+    ];
+    let hash = 0;
+    if (code) {
+        for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+}
+
+function showModal(title, content) {
+    const modal = document.getElementById('modalOverlay');
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').innerHTML = content;
+    modal.classList.add('active');
+}

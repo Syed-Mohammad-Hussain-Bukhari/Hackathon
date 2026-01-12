@@ -401,6 +401,71 @@ body {
     margin: 2px;
     padding: 4px;
     font-weight: 500;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cell-course {
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1.1;
+}
+
+.cell-section {
+    font-size: 8px;
+    font-weight: 400;
+    color: #3b82f6;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+/* ========== SECTIONS LIST ========== */
+.sections-list {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+}
+
+.sections-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 10px;
+}
+
+.section-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+
+.section-item:last-child {
+    margin-bottom: 0;
+}
+
+.section-course {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.section-id {
+    font-size: 10px;
+    color: #3b82f6;
+    font-weight: 500;
+}
+
+.section-times {
+    font-size: 10px;
+    color: #64748b;
 }
 
 /* ========== FOOTER ========== */
@@ -517,4 +582,148 @@ body {
 
 .warning-actions .btn {
     flex: 1;
+}
+
+/* ========== CONFLICT DISPLAY ========== */
+.conflict-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.conflict-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.conflict-box h3 {
+    color: #991b1b;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.conflict-box p {
+    color: #dc2626;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.conflict-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.conflict-item {
+    background: white;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: left;
+}
+
+.conflict-courses {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.conflict-course {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.conflict-vs {
+    color: #f59e0b;
+    font-size: 14px;
+}
+
+.conflict-time {
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+.conflict-hint {
+    font-size: 11px;
+    color: #64748b;
+    font-style: italic;
+}
+
+/* Comparison View Styles */
+.comparison-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    padding-bottom: 20px;
+    margin-top: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f1f1f1;
+}
+
+.comparison-item {
+    min-width: 280px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.comparison-meta {
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+}
+
+/* Mini Grid Override */
+.timetable-grid.mini .timetable-row {
+    grid-template-columns: 35px repeat(5, 1fr);
+    /* Smaller time column */
+    min-width: unset;
+    /* Allow shrinking */
+}
+
+.timetable-grid.mini .timetable-header,
+.timetable-grid.mini .timetable-time {
+    padding: 2px;
+    font-size: 0.6rem;
+}
+
+.timetable-grid.mini .timetable-cell {
+    padding: 1px;
+    min-height: 25px;
+    /* Compact height */
+}
+
+.timetable-grid.mini .timetable-class {
+    padding: 1px;
+    border-left-width: 2px;
+}
+
+.timetable-grid.mini .cell-course {
+    font-size: 0.55rem;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.timetable-grid.mini .cell-section {
+    display: none;
+    /* Hide section details in mini view to save space */
 }

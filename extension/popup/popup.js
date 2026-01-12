@@ -8,6 +8,8 @@ let selectedCourses = new Set();
 let selectedDays = new Set(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
 let excludedCourses = [];
 let filteredScheduleData = null;
+let savedResults = null;
+let isCartView = false;
 
 // Max limits
 const MAX_COMBINATIONS = 50000;
@@ -21,7 +23,13 @@ const statusText = document.getElementById('statusText');
 document.addEventListener('DOMContentLoaded', () => {
     // Navigation buttons
     document.getElementById('scanBtn').addEventListener('click', scanCourses);
-    document.getElementById('nextToFiltersBtn').addEventListener('click', () => showStep('filters'));
+    document.getElementById('nextToFiltersBtn').addEventListener('click', () => {
+        if (selectedCourses.size === 0) {
+            updateStatus('Please select at least one course!', 'error');
+            return;
+        }
+        showStep('filters');
+    });
     document.getElementById('backToCoursesBtn').addEventListener('click', () => showStep('courses'));
     document.getElementById('generateBtn').addEventListener('click', generateTimetables);
     document.getElementById('backToFiltersBtn').addEventListener('click', () => showStep('filters'));
@@ -29,11 +37,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('backBtn').addEventListener('click', () => showStep('filters'));
     document.getElementById('backToResultsBtn').addEventListener('click', () => showStep('results'));
     document.getElementById('applyBtn').addEventListener('click', applySchedule);
+    document.getElementById('compareBtn').addEventListener('click', () => showComparisonView());
+    document.getElementById('backFromCompareBtn').addEventListener('click', () => showStep('results'));
 
     // Day chips
     document.querySelectorAll('#dayChips .chip').forEach(chip => {
         chip.addEventListener('click', () => toggleDay(chip));
     });
+
+    document.getElementById('viewCartBtn').addEventListener('click', () => {
+        isCartView = !isCartView;
+        displayCourseSelection();
+    });
+
+    document.getElementById('viewClosedBtn').addEventListener('click', displayClosedSections);
+    document.getElementById('backFromClosedBtn').addEventListener('click', () => showStep('courses'));
 });
 
 // Update status
@@ -52,6 +70,8 @@ function showStep(step) {
         'scan': 'stepScan',
         'courses': 'stepCourses',
         'filters': 'stepFilters',
+        'comparison': 'stepComparison',
+        'closed': 'stepClosedSections',
         'warnings': 'stepWarnings',
         'results': 'stepResults',
         'timetable': 'stepTimetable'
@@ -98,27 +118,56 @@ async function scanCourses() {
 
 // Display course selection
 function displayCourseSelection() {
+    // Basic Toggle Logic
+    const btn = document.getElementById('viewCartBtn');
+    let displayData = scannedData;
+
+    if (isCartView) {
+        // Filter for enrolled items
+        displayData = scannedData.filter(s => s.status && s.status.toLowerCase() === 'enrolled');
+        btn.textContent = "Back to All Courses";
+        btn.style.background = "#e0f2fe";
+        btn.style.color = "#0369a1";
+        btn.style.borderColor = "#7dd3fc";
+    } else {
+        btn.textContent = "View Enrollment Cart";
+        btn.style.background = "#fef3c7";
+        btn.style.color = "#92400e";
+        btn.style.borderColor = "#fcd34d";
+    }
+
     const courseMap = {};
-    scannedData.forEach(s => {
+    displayData.forEach(s => {
         if (!courseMap[s.courseCode]) {
             courseMap[s.courseCode] = s.courseName || s.courseCode;
         }
     });
 
     const courses = Object.keys(courseMap);
-    const openSections = scannedData.filter(s => s.status === 'open');
+    const openSections = displayData.filter(s => s.status === 'open');
 
     document.getElementById('courseCount').textContent = courses.length;
-    document.getElementById('sectionCount').textContent = scannedData.length;
-    document.getElementById('openCount').textContent = openSections.length;
+    document.getElementById('sectionCount').textContent = displayData.length;
+    document.getElementById('openCount').textContent = openSections.length; // Or 'Enrolled' count if in cart view? Keep it consistent.
 
     const chipsContainer = document.getElementById('courseChips');
     chipsContainer.innerHTML = '';
+
+    if (courses.length === 0) {
+        chipsContainer.innerHTML = '<div style="padding:10px; color:#666; font-style:italic;">No courses found in this view.</div>';
+    }
 
     courses.forEach(code => {
         const name = courseMap[code];
         const chip = document.createElement('div');
         chip.className = 'chip';
+        // Pre-select if already in selectedCourses, OR if viewing cart (maybe auto-select?)
+        // Let's keep selection manual so user can choose which enrolled courses to include in schedule generation?
+        // Or just display.
+        if (selectedCourses.has(code)) {
+            chip.classList.add('selected');
+        }
+
         chip.setAttribute('data-course', code);
         chip.setAttribute('title', code);
         chip.innerHTML = `<span class="chip-check">✓</span><span>${name}</span>`;
@@ -126,7 +175,12 @@ function displayCourseSelection() {
         chipsContainer.appendChild(chip);
     });
 
-    updateStatus(`Found ${courses.length} courses with ${openSections.length} open sections`, 'success');
+    if (isCartView) {
+        updateStatus(`Showing ${courses.length} enrolled courses/sections`, 'info');
+    } else {
+        updateStatus(`Found ${courses.length} courses with ${openSections.length} open sections`, 'success');
+    }
+
     showStep('courses');
 }
 
@@ -243,6 +297,61 @@ function continueWithExclusions() {
     }
 }
 
+// Show detailed conflict information
+function showConflictDetails(conflicts) {
+    // Get unique conflicts
+    const uniqueConflicts = [];
+    const seen = new Set();
+
+    for (const c of conflicts) {
+        const key = `${c.course1}-${c.section1}-${c.course2}-${c.section2}`;
+        if (!seen.has(key)) {
+            seen.add(key);
+            uniqueConflicts.push(c);
+            if (uniqueConflicts.length >= 5) break;
+        }
+    }
+
+    // Build conflict HTML
+    let conflictHTML = '<div class="conflict-box">';
+    conflictHTML += '<div class="conflict-icon">⚠️</div>';
+    conflictHTML += '<h3>Schedule Conflicts Found</h3>';
+    conflictHTML += '<p>The following sections clash with each other:</p>';
+    conflictHTML += '<div class="conflict-list">';
+
+    uniqueConflicts.forEach(c => {
+        const sec1Short = c.section1 ? c.section1.split(' ').pop() : 'N/A';
+        const sec2Short = c.section2 ? c.section2.split(' ').pop() : 'N/A';
+        conflictHTML += `
+            <div class="conflict-item">
+                <div class="conflict-courses">
+                    <span class="conflict-course">${c.course1} (${sec1Short})</span>
+                    <span class="conflict-vs">⚡</span>
+                    <span class="conflict-course">${c.course2} (${sec2Short})</span>
+                </div>
+                <div class="conflict-time">
+                    ${c.day}: ${c.time1} ↔ ${c.time2}
+                </div>
+            </div>
+        `;
+    });
+
+    conflictHTML += '</div>';
+    conflictHTML += '<p class="conflict-hint">Try selecting different courses or changing filters.</p>';
+    conflictHTML += '</div>';
+    conflictHTML += '<button class="btn btn-small" id="backFromConflictsBtn">← Back to Filters</button>';
+
+    // Display in results container
+    const container = document.getElementById('resultsList');
+    container.innerHTML = conflictHTML;
+
+    // Add back button handler
+    document.getElementById('backFromConflictsBtn').addEventListener('click', () => showStep('filters'));
+
+    updateStatus('Conflicts detected - see details below', 'error');
+    showStep('results');
+}
+
 // Process generation
 function processGeneration(courseGroups, filters) {
     const groupsArray = Object.values(courseGroups);
@@ -252,45 +361,58 @@ function processGeneration(courseGroups, filters) {
         return;
     }
 
-    // Calculate combinations
-    let totalCombinations = 1;
-    groupsArray.forEach(group => totalCombinations *= group.length);
+    // Optimization: Backtracking Search (Finds valid schedules deep in the tree without generating everything)
+    updateStatus('Searching for optimal schedules...', 'info');
+    const validSchedules = findValidSchedulesBacktracking(groupsArray, 100, filters);
 
-    console.log(`Total combinations: ${totalCombinations}`);
+    const allConflicts = [];
 
-    // Limit if needed
-    let limitedGroups = groupsArray;
-    if (totalCombinations > MAX_COMBINATIONS) {
-        updateStatus('Processing... limiting options', 'info');
-        let maxPerCourse = MAX_SECTIONS_PER_COURSE;
-        while (maxPerCourse > 2) {
-            let newTotal = 1;
-            limitedGroups = groupsArray.map(g => g.slice(0, maxPerCourse));
-            limitedGroups.forEach(g => newTotal *= g.length);
-            if (newTotal <= MAX_COMBINATIONS) break;
-            maxPerCourse--;
+    // If Backtracking failed to find ANY valid schedule, run diagnostics to explain why (conflicts)
+    if (validSchedules.length === 0) {
+        // Run limited generation just to find conflicts for reporting/partial scheduling
+
+        // Calculate combinations
+        let totalCombinations = 1;
+        groupsArray.forEach(group => totalCombinations *= group.length);
+
+        // Limit for diagnostics to avoid crash
+        let limitedGroups = groupsArray;
+        if (totalCombinations > 10000) {
+            let maxPerCourse = MAX_SECTIONS_PER_COURSE;
+            while (maxPerCourse > 2) {
+                limitedGroups = groupsArray.map(g => g.slice(0, maxPerCourse));
+                let t = 1; limitedGroups.forEach(g => t *= g.length);
+                if (t <= 10000) break;
+                maxPerCourse--;
+            }
         }
-    }
 
-    // Generate combinations
-    const combinations = generateCombinationsLimited(limitedGroups, MAX_COMBINATIONS);
+        const combinations = generateCombinationsLimited(limitedGroups, 2000); // Small sample for conflicts
 
-    if (combinations.length === 0) {
-        updateStatus('No combinations possible. Try different courses.', 'error');
-        return;
-    }
-
-    // Filter conflicts
-    const validSchedules = [];
-    for (const combo of combinations) {
-        if (!hasConflict(combo)) {
-            validSchedules.push(combo);
-            if (validSchedules.length >= 100) break;
+        for (const combo of combinations) {
+            const conflicts = getConflictDetails(combo);
+            if (conflicts.length > 0) {
+                if (allConflicts.length < 50) allConflicts.push(...conflicts);
+            }
         }
     }
 
     if (validSchedules.length === 0) {
-        updateStatus('No conflict-free schedules. Try different courses.', 'error');
+        // Attempt to find a partial schedule
+        if (allConflicts.length > 0) {
+            const partialResult = attemptPartialScheduling(courseGroups, filters, allConflicts);
+            if (partialResult) {
+                displayPartialResults(partialResult);
+                return;
+            }
+
+            // If that fails too, fall back to showing conflicts
+            showConflictDetails(allConflicts);
+        } else if (filters.maxGap === -1) {
+            updateStatus('No gap-free schedules found. Try allowing gaps.', 'error');
+        } else {
+            updateStatus('No conflict-free schedules. Try different courses.', 'error');
+        }
         return;
     }
 
@@ -300,12 +422,185 @@ function processGeneration(courseGroups, filters) {
         days: countDays(schedule),
         gaps: calculateTotalGap(schedule),
         score: calculateScore(schedule, filters.maxDays, filters.maxGap)
-    })).sort((a, b) => b.score - a.score).slice(0, 10);
+    })).sort((a, b) => {
+        // Primary: Gaps (Ascending) - User requested "min gap to max"
+        if (a.gaps !== b.gaps) return a.gaps - b.gaps;
+        // Secondary: Score (Descending)
+        if (b.score !== a.score) return b.score - a.score;
+        // Tertiary: Days (Ascending)
+        return a.days - b.days;
+    }).slice(0, 10);
 
+    savedResults = rankedSchedules; // Save for comparison view
     displayResults(rankedSchedules);
     updateStatus(`Found ${rankedSchedules.length} optimal schedules`, 'success');
     showStep('results');
 }
+
+// Backtracking Search Algorithm to find valid schedules efficiently
+function findValidSchedulesBacktracking(groups, maxResults, filters) {
+    const results = [];
+    let steps = 0;
+    const MAX_STEPS = 500000; // Limits computation time
+
+    function backtrack(index, currentSchedule) {
+        if (results.length >= maxResults || steps > MAX_STEPS) return;
+
+        if (index === groups.length) {
+            // Full schedule built
+            if (filters.maxGap === -1) {
+                if (calculateTotalGap(currentSchedule) === 0) {
+                    results.push([...currentSchedule]);
+                }
+            } else {
+                results.push([...currentSchedule]);
+            }
+            return;
+        }
+
+        const currentCourseSections = groups[index];
+
+        for (const section of currentCourseSections) {
+            steps++;
+            if (steps > MAX_STEPS) return;
+
+            if (hasConflictWithExisting(section, currentSchedule)) {
+                continue;
+            }
+
+            currentSchedule.push(section);
+            backtrack(index + 1, currentSchedule);
+            currentSchedule.pop();
+
+            if (results.length >= maxResults) return;
+        }
+    }
+
+    function hasConflictWithExisting(newSection, currentSchedule) {
+        for (const existing of currentSchedule) {
+            if (sectionsOverlap(newSection, existing)) return true;
+        }
+        return false;
+    }
+
+    backtrack(0, []);
+    return results;
+}
+
+// Attempt to finding a partial schedule by removing conflicting courses
+function attemptPartialScheduling(courseGroups, filters, conflicts) {
+    // 1. Identify which course causes the most conflicts
+    const conflictCounts = {};
+
+    conflicts.forEach(c => {
+        conflictCounts[c.course1] = (conflictCounts[c.course1] || 0) + 1;
+        conflictCounts[c.course2] = (conflictCounts[c.course2] || 0) + 1;
+    });
+
+    // Sort courses by conflict count
+    const sortedCourses = Object.keys(conflictCounts).sort((a, b) => conflictCounts[b] - conflictCounts[a]);
+
+    if (sortedCourses.length === 0) return null;
+
+    // 2. Try removing the identified problematic course(s)
+    // We try removing the top 1, then top 2... (limit to removing max 2 courses for now)
+
+    for (let i = 0; i < Math.min(sortedCourses.length, 2); i++) {
+        const courseToRemove = sortedCourses[i];
+
+        // Create new groups without this course
+        const newGroups = { ...courseGroups };
+        delete newGroups[courseToRemove];
+
+        // Check if we have enough courses left
+        if (Object.keys(newGroups).length === 0) continue;
+
+        // Try to generate
+        const groupsArray = Object.values(newGroups);
+
+        // Combinations (simplified logic for partial check)
+        let totalCombos = 1;
+        groupsArray.forEach(g => totalCombos *= g.length);
+
+        let limited = groupsArray;
+        // Apply limits if needed... (simplified here)
+        if (totalCombos > 10000) {
+            limited = groupsArray.map(g => g.slice(0, 5));
+        }
+
+        const combos = generateCombinationsLimited(limited, 5000);
+
+        // Check for valid schedules
+        for (const combo of combos) {
+            if (!hasConflict(combo)) {
+                // Check no gap if needed
+                if (filters.maxGap === -1) {
+                    if (calculateTotalGap(combo) !== 0) continue;
+                }
+
+                // Found valid partial!
+                // Generate full set of results for this subset
+                const valid = combos.filter(c => !hasConflict(c) && (filters.maxGap !== -1 || calculateTotalGap(c) === 0));
+
+                // Rank
+                const ranked = valid.map(schedule => ({
+                    schedule,
+                    days: countDays(schedule),
+                    gaps: calculateTotalGap(schedule),
+                    score: calculateScore(schedule, filters.maxDays, filters.maxGap)
+                })).sort((a, b) => b.score - a.score).slice(0, 10);
+
+                // Find what it conflicted with in the original set to show a helpful message
+                // Just use the first conflict involving this course from the original list
+                const relatedConflict = conflicts.find(c => c.course1 === courseToRemove || c.course2 === courseToRemove);
+
+                return {
+                    schedules: ranked,
+                    removed: courseToRemove,
+                    conflict: relatedConflict
+                };
+            }
+        }
+    }
+
+    return null;
+}
+
+function displayPartialResults(result) {
+    const { schedules, removed, conflict } = result;
+
+    displayResults(schedules);
+
+    const container = document.getElementById('resultsList');
+
+    // Prepend warning
+    const warning = document.createElement('div');
+    warning.className = 'conflict-box';
+    warning.style.marginBottom = '20px';
+    warning.style.background = '#fff7ed'; // Orange tint
+    warning.style.borderColor = '#fdba74';
+
+    const otherCourse = conflict ? (conflict.course1 === removed ? conflict.course2 : conflict.course1) : 'another course';
+
+    warning.innerHTML = `
+        <div style="color: #c2410c; font-weight: bold; margin-bottom: 8px;">
+            ⚠️ Conflict Resolved Automatically
+        </div>
+        <div style="font-size: 12px; color: #9a3412;">
+            <span style="font-weight: 700;">${removed}</span> was removed because it clashed with 
+            <span style="font-weight: 700;">${otherCourse}</span>.
+        </div>
+        <div style="font-size: 11px; margin-top: 6px; color: #7c2d12;">
+            Showing timetable for the remaining ${schedules[0].schedule.length} subjects.
+        </div>
+    `;
+
+    container.insertBefore(warning, container.firstChild);
+
+    updateStatus(`Generated partial schedule (1 course removed)`, 'info');
+    showStep('results');
+}
+
 
 // Generate combinations with limit
 function generateCombinationsLimited(groups, limit) {
@@ -341,6 +636,40 @@ function hasConflict(schedule) {
     return false;
 }
 
+// Get detailed conflict information
+function getConflictDetails(schedule) {
+    const conflicts = [];
+    for (let i = 0; i < schedule.length; i++) {
+        for (let j = i + 1; j < schedule.length; j++) {
+            const clashInfo = getClashInfo(schedule[i], schedule[j]);
+            if (clashInfo) {
+                conflicts.push(clashInfo);
+            }
+        }
+    }
+    return conflicts;
+}
+
+// Get specific clash info between two sections
+function getClashInfo(s1, s2) {
+    for (const t1 of s1.schedule) {
+        for (const t2 of s2.schedule) {
+            if (t1.day === t2.day && timesOverlap(t1.time, t2.time)) {
+                return {
+                    course1: s1.courseName || s1.courseCode,
+                    section1: s1.sectionId || s1.id,
+                    course2: s2.courseName || s2.courseCode,
+                    section2: s2.sectionId || s2.id,
+                    day: t1.day,
+                    time1: t1.time,
+                    time2: t2.time
+                };
+            }
+        }
+    }
+    return null;
+}
+
 function sectionsOverlap(s1, s2) {
     for (const t1 of s1.schedule) {
         for (const t2 of s2.schedule) {
@@ -363,13 +692,44 @@ function countDays(schedule) {
 }
 
 function calculateTotalGap(schedule) {
-    return 0; // Simplified
+    const dayClasses = {};
+
+    schedule.forEach(section => {
+        section.schedule.forEach(slot => {
+            if (!dayClasses[slot.day]) dayClasses[slot.day] = [];
+            const [start, end] = slot.time.split(' - ').map(t => parseInt(t.replace(':', '')));
+            dayClasses[slot.day].push({ start, end });
+        });
+    });
+
+    let totalGap = 0;
+    Object.values(dayClasses).forEach(classes => {
+        classes.sort((a, b) => a.start - b.start);
+        for (let i = 1; i < classes.length; i++) {
+            // Calculate gap in hours (times are in HHMM format)
+            const gapMinutes = (classes[i].start - classes[i - 1].end);
+            // Convert from HHMM difference to hours (rough approximation)
+            const gapHours = Math.floor(gapMinutes / 100);
+            totalGap += Math.max(0, gapHours);
+        }
+    });
+
+    return totalGap;
 }
 
 function calculateScore(schedule, maxDays, maxGap) {
     const days = countDays(schedule);
+    const gaps = calculateTotalGap(schedule);
+
     let score = (6 - days) * 100;
     if (days <= maxDays) score += 200;
+
+    // Penalize gaps - fewer gaps = higher score
+    score -= gaps * 50;
+
+    // Bonus for no gaps when maxGap is -1 (No Gap option)
+    if (maxGap === -1 && gaps === 0) score += 300;
+
     return score;
 }
 
@@ -388,15 +748,17 @@ function displayResults(rankedSchedules) {
     }
 
     rankedSchedules.forEach((result, index) => {
+        const rank = index + 1;
         const card = document.createElement('div');
         card.className = 'result-card';
         card.innerHTML = `
             <div class="result-card-header">
-                <span class="result-rank">Option #${index + 1}</span>
+                <span class="result-rank">#${rank} Best Option</span>
                 <span class="result-score">Score: ${result.score}</span>
             </div>
             <div class="result-meta">
                 <span>📅 ${result.days} days</span>
+                <span>⏱️ ${result.gaps}h gaps</span>
                 <span>📚 ${result.schedule.length} courses</span>
             </div>
         `;
@@ -416,7 +778,7 @@ function viewTimetable(result, index) {
 }
 
 // Create timetable HTML
-function createTimetableHTML(schedule) {
+function createTimetableHTML(schedule, showSectionList = true, isMini = false) {
     const days = [...selectedDays];
     const hours = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
 
@@ -425,11 +787,16 @@ function createTimetableHTML(schedule) {
         section.schedule.forEach(t => {
             const hourKey = t.time.split(' - ')[0];
             const key = `${t.day}-${hourKey}`;
-            scheduleMap[key] = section.courseName || section.courseCode;
+            // Store both course name and section ID
+            scheduleMap[key] = {
+                courseName: section.courseName || section.courseCode,
+                sectionId: section.sectionId || section.id || 'N/A'
+            };
         });
     });
 
-    let html = '<div class="timetable-row">';
+    let html = `<div class="timetable-grid${isMini ? ' mini' : ''}">`;
+    html += '<div class="timetable-row">';
     html += '<div class="timetable-cell timetable-header">Time</div>';
     days.forEach(day => html += `<div class="timetable-cell timetable-header">${day}</div>`);
     html += '</div>';
@@ -439,15 +806,89 @@ function createTimetableHTML(schedule) {
         html += `<div class="timetable-cell timetable-time">${hour}</div>`;
         days.forEach(day => {
             const key = `${day}-${hour}`;
-            const course = scheduleMap[key];
-            html += course
-                ? `<div class="timetable-cell timetable-class">${course}</div>`
-                : '<div class="timetable-cell"></div>';
+            const data = scheduleMap[key];
+            if (data) {
+                // Smart Section ID Extraction
+                let sectionShort = data.sectionId;
+                if (sectionShort.includes(' ')) {
+                    sectionShort = sectionShort.split(' ').pop();
+                } else if (sectionShort.includes('-') && sectionShort.length > 8) {
+                    sectionShort = sectionShort.split('-').pop();
+                }
+                sectionShort = sectionShort.replace(/-?NOGAP/i, '').replace(/\(Lab\)/i, 'L');
+                html += `<div class="timetable-cell timetable-class" title="${data.sectionId}">
+                    <div class="cell-course">${data.courseName}</div>
+                    <div class="cell-section">${sectionShort}</div>
+                </div>`;
+            } else {
+                html += '<div class="timetable-cell"></div>';
+            }
         });
         html += '</div>';
+        html += '</div>';
     });
+    html += '</div>'; // Close grid
+
+    // Add sections list below timetable (only if not mini)
+    if (showSectionList && !isMini) {
+        html += '<div class="sections-list">';
+        html += '<div class="sections-title">📋 Sections in this schedule:</div>';
+        schedule.forEach(section => {
+            const sectionId = section.sectionId || section.id || 'N/A';
+            const courseName = section.courseName || section.courseCode;
+            const times = section.schedule.map(t => `${t.day} ${t.time}`).join(', ');
+            html += `<div class="section-item">
+                <span class="section-course">${courseName}</span>
+                <span class="section-id">${sectionId}</span>
+                <span class="section-times">${times}</span>
+            </div>`;
+        });
+        html += '</div>';
+    }
 
     return html;
+}
+
+// Show Comparison View
+function showComparisonView() {
+    if (!savedResults || savedResults.length === 0) {
+        updateStatus('No results to compare', 'error');
+        return;
+    }
+
+    const container = document.getElementById('comparisonContainer');
+    container.innerHTML = '';
+
+    savedResults.forEach((result, index) => {
+        const item = document.createElement('div');
+        item.className = 'comparison-item';
+
+        // Header
+        item.innerHTML = `
+            <div class="comparison-meta">
+                <span>#${index + 1} Score: ${result.score}</span>
+                <span>${result.days} Days / ${result.gaps}h Gaps</span>
+            </div>
+        `;
+
+        // Mini Grid
+        const gridHTML = createTimetableHTML(result.schedule, false, true);
+        const gridDiv = document.createElement('div');
+        gridDiv.innerHTML = gridHTML;
+        item.appendChild(gridDiv);
+
+        // Select Button
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-success btn-small';
+        btn.style.marginTop = '10px';
+        btn.textContent = 'Select This';
+        btn.onclick = () => viewTimetable(result, index);
+        item.appendChild(btn);
+
+        container.appendChild(item);
+    });
+
+    showStep('comparison');
 }
 
 // Apply schedule
@@ -465,4 +906,72 @@ async function applySchedule() {
     } catch (error) {
         updateStatus('Error applying schedule', 'error');
     }
+}
+
+// Display Closed Sections
+function displayClosedSections() {
+    // Filter for sections that are NOT open (e.g. full, closed)
+    const closedSections = scannedData.filter(s => s.status && s.status.toLowerCase() !== 'open');
+    const container = document.getElementById('closedSectionsList');
+    container.innerHTML = '';
+
+    if (closedSections.length === 0) {
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:#666;">No closed sections found.</div>';
+    } else {
+        closedSections.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'section-item';
+            card.style.background = 'white';
+            card.style.border = '1px solid #ddd';
+            card.style.borderRadius = '8px';
+            card.style.padding = '12px';
+            card.style.marginBottom = '10px';
+
+            const times = s.schedule.map(t => `${t.day} ${t.time}`).join(' | ');
+            const sectionsText = `${s.courseName} | ${s.sectionId}`;
+
+            card.innerHTML = `
+                <div style="font-weight:bold; color:#333; margin-bottom:4px;">${s.courseName || s.courseCode}</div>
+                <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+                    <span style="color:#d97706; font-weight:600;">Section ${s.sectionId}</span>
+                    <span style="color:#dc2626;">${s.status || 'Closed'}</span>
+                </div>
+                <div style="font-size:0.8rem; color:#666; margin:6px 0;">${times}</div>
+                <button class="btn btn-small" style="width:100%; margin-top:5px; background:#fef3c7; color:#92400e; border:1px solid #fcd34d;">
+                    🔔 Notify Me When Open
+                </button>
+            `;
+
+            const btn = card.querySelector('button');
+            btn.addEventListener('click', () => watchSection(s.sectionId, s.courseCode, btn));
+
+            container.appendChild(card);
+        });
+    }
+    showStep('closed');
+}
+
+function watchSection(sectionId, courseCode, btn) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        if (!tabs[0]) return;
+        chrome.tabs.sendMessage(tabs[0].id, {
+            action: 'watch',
+            sectionId: sectionId,
+            courseCode: courseCode
+        }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error(chrome.runtime.lastError);
+                updateStatus('Error connecting to page', 'error');
+                return;
+            }
+            if (btn) {
+                btn.textContent = '✅ Watching';
+                btn.disabled = true;
+                btn.style.background = '#dcfce7';
+                btn.style.color = '#15803d';
+                btn.style.borderColor = '#86efac';
+            }
+            updateStatus(`Extension is watching Section ${sectionId}`, 'success');
+        });
+    });
 }

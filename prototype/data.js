@@ -67,14 +67,38 @@ const coursesData = [
         name: "Professional Practices",
         type: "compulsory",
         semester: "8th Semester",
-        sections: generateSections("CSCS4963", "G")
+        sections: [
+            // Special No-Gap section - ends at 10:00 on Mon/Wed
+            {
+                id: "CSCS4963-F25-BS-CS-S21 G20",
+                status: 'open',
+                schedule: [
+                    { day: 'Mon', time: '08:00 - 10:00' },
+                    { day: 'Wed', time: '08:00 - 10:00' },
+                    { day: 'Fri', time: '08:00 - 09:00' }
+                ]
+            },
+            ...generateSections("CSCS4963", "G")
+        ]
     },
     {
         code: "CSCS5241",
         name: "Parallel and Distributed Computing",
         type: "compulsory",
         semester: "8th Semester",
-        sections: generateSections("CSCS5241", "G")
+        sections: [
+            // Special No-Gap section - starts at 10:00 on Mon/Wed (right after Professional Practices)
+            {
+                id: "CSCS5241-F25-BS-CS-S21 G20",
+                status: 'open',
+                schedule: [
+                    { day: 'Mon', time: '10:00 - 12:00' },
+                    { day: 'Wed', time: '10:00 - 12:00' },
+                    { day: 'Fri', time: '09:00 - 10:00' }
+                ]
+            },
+            ...generateSections("CSCS5241", "G")
+        ]
     },
     {
         code: "CSMS3403",

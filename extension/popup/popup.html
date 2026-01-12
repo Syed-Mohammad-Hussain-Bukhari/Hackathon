@@ -53,7 +53,17 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Select Courses to Register</label>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label>Select Courses to Register</label>
+                        <div style="display: flex; gap: 5px; flex: 1; justify-content: flex-end;">
+                            <button class="btn btn-small" id="viewCartBtn"
+                                style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d;">View Cart</button>
+                            <button class="btn btn-small" id="viewClosedBtn"
+                                style="background:#e9ecef; color:#495057; border:1px solid #ced4da;">🔔 View
+                                Closed</button>
+                        </div>
+                    </div>
                     <div class="course-chips" id="courseChips"></div>
                 </div>
 
@@ -125,6 +135,7 @@
                     <div class="form-group">
                         <label>Max Gap</label>
                         <select id="maxGap" class="select">
+                            <option value="-1">No Gap</option>
                             <option value="1">1 Hour</option>
                             <option value="2" selected>2 Hours</option>
                             <option value="3">3 Hours</option>
@@ -159,7 +170,21 @@
                     <h3>Top Timetables</h3>
                     <button class="btn btn-small" id="backBtn">← Back</button>
                 </div>
+                <div style="margin-bottom: 10px; text-align: right;">
+                    <button class="btn btn-primary btn-small" id="compareBtn">📊 Compare Side-by-Side</button>
+                </div>
                 <div class="results-list" id="resultsList"></div>
+            </section>
+
+            <!-- Step 7: Comparison View -->
+            <section class="step hidden" id="stepComparison">
+                <div class="results-header">
+                    <h3>Compare Schedules</h3>
+                    <button class="btn btn-small" id="backFromCompareBtn">← Back</button>
+                </div>
+                <div class="comparison-container" id="comparisonContainer">
+                    <!-- Mini Timetables injected here -->
+                </div>
             </section>
 
             <!-- Step 6: Timetable View -->
@@ -168,11 +193,21 @@
                     <h3 id="timetableTitle">Timetable #1</h3>
                     <button class="btn btn-small" id="backToResultsBtn">← Back</button>
                 </div>
-                <div class="timetable-grid" id="timetableGrid"></div>
+                <div id="timetableGrid"></div>
                 <button class="btn btn-success btn-large" id="applyBtn">
                     <span class="btn-icon">✓</span>
                     Apply This Schedule
                 </button>
+
+            </section>
+
+            <!-- Step 8: Closed Sections -->
+            <section class="step hidden" id="stepClosedSections">
+                <div class="results-header">
+                    <h3>Closed Sections (Full)</h3>
+                    <button class="btn btn-small" id="backFromClosedBtn">← Back</button>
+                </div>
+                <div class="results-list" id="closedSectionsList"></div>
             </section>
         </main>
 
